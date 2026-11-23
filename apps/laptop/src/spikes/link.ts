@@ -24,6 +24,7 @@ const sync = new ClockSync(link);
 const imu: { recvMs: number; phoneTimeMs: number }[] = [];
 let startedAt = 0;
 let running = false;
+let endedAt = 0;
 let timer = 0;
 
 link.onStatus((s, detail) => {
@@ -39,8 +40,9 @@ link.onMessage((msg) => {
 function summary() {
   const est = sync.estimate();
   const rtts = sync.rttsMs();
-  const now = performance.now();
-  const recent = imu.filter((s) => now - s.recvMs <= 2000);
+  // 측정이 끝난 뒤 복사해도 값이 바뀌지 않도록 측정 구간(시작~끝)으로 계산한다
+  const now = running || endedAt === 0 ? performance.now() : endedAt;
+  const runS = (now - startedAt) / 1000;
   const imuLatency = est ? imu.map((s) => s.recvMs - phoneToLaptopMs(s.phoneTimeMs, est.offsetMs)) : [];
   return {
     network: network.value,
@@ -52,7 +54,8 @@ function summary() {
     /** 왕복의 절반 = 한 방향 전송 지연 추정 (G2 판정값) */
     oneWayP95Ms: percentile(rtts, 95) / 2,
     imuSamples: imu.length,
-    imuHz: recent.length / 2,
+    /** 측정 구간 평균 수신 주기 */
+    imuHz: runS > 0 ? imu.length / runS : Number.NaN,
     /** 센서 이벤트 발생 → 노트북 수신 (시계 보정 후, 센서 처리 지연 포함) */
     imuLatencyP50Ms: percentile(imuLatency, 50),
     imuLatencyP95Ms: percentile(imuLatency, 95),
@@ -83,6 +86,7 @@ startBtn.addEventListener('click', () => {
     if (performance.now() - startedAt >= DURATION_MS) {
       clearInterval(timer);
       running = false;
+      endedAt = performance.now();
       status.textContent = '측정 끝 — 결과를 복사해 docs/spike-report.md에 붙이세요.';
       startBtn.disabled = false;
       copyBtn.disabled = false;
