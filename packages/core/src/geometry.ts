@@ -23,3 +23,21 @@ export function jointAngleDeg(a: Point2D, b: Point2D, c: Point2D): number {
   const clamped = Math.min(1, Math.max(-1, cos));
   return (Math.acos(clamped) * 180) / Math.PI;
 }
+
+/**
+ * 정규화 좌표(x는 화면 너비, y는 높이 기준)를 "화면비 공간"(둘 다 높이 단위)으로 바꾼다.
+ * aspect = 화면 너비 ÷ 높이. 각도·거리는 이 공간에서 재야 왜곡이 없다.
+ */
+export function toAspectSpace(p: Point2D, aspect: number): Point2D {
+  return { x: p.x * aspect, y: p.y };
+}
+
+/** 화면비를 보정한 관절 각도 (0~180°, 계산 불가 시 NaN) */
+export function jointAngleAspectDeg(a: Point2D, b: Point2D, c: Point2D, aspect: number): number {
+  return jointAngleDeg(toAspectSpace(a, aspect), toAspectSpace(b, aspect), toAspectSpace(c, aspect));
+}
+
+/** 화면비를 보정한 두 점 사이 거리 (화면 높이 단위) */
+export function distanceAspect(a: Point2D, b: Point2D, aspect: number): number {
+  return Math.hypot((a.x - b.x) * aspect, a.y - b.y);
+}
