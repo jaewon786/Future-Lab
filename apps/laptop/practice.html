@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>펜싱 코치 · 자세 연습</title>
+    <style>
+      :root { --bg: #ffffff; --fg: #111827; --muted: #6b7280; --panel: #f3f4f6; --good: #15803d; --bad: #b91c1c; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #111111; --fg: #f3f4f6; --muted: #9ca3af; --panel: #1f2937; --good: #4ade80; --bad: #f87171; } }
+      body { font-family: system-ui, sans-serif; margin: 16px; max-width: 960px; line-height: 1.5; background: var(--bg); color: var(--fg); }
+      button { font-size: 18px; padding: 10px 16px; }
+      label { display: block; margin: 6px 0; font-size: 18px; }
+      .stage { position: relative; display: inline-block; background: var(--panel); min-width: 320px; min-height: 240px; }
+      .stage video, .stage canvas { width: 100%; max-width: 640px; display: block; }
+      .stage canvas { position: absolute; left: 0; top: 0; }
+      .stage video[hidden] + canvas { position: static; }
+      .hint { white-space: pre-line; font-size: 20px; font-weight: 600; }
+      .muted { color: var(--muted); }
+      .layout { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+      #cards { flex: 1; min-width: 260px; max-height: 70vh; overflow: auto; }
+      .card { border-left: 6px solid var(--muted); background: var(--panel); padding: 8px 12px; margin-bottom: 8px; }
+      .card h3 { margin: 0 0 4px; }
+      .card p { margin: 2px 0; }
+      .card.good { border-color: var(--good); }
+      .card.bad { border-color: var(--bad); }
+      .card.bad p:first-of-type { font-weight: 700; color: var(--bad); }
+      #error { color: var(--bad); font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <h1>자세 연습</h1>
+
+    <section data-screen="safety">
+      <h2>시작 전 안전 확인</h2>
+      <label><input type="checkbox" id="strap" /> 폰을 쥔다면 손목 스트랩을 걸었습니다</label>
+      <label><input type="checkbox" id="space" /> 주변 2m 안에 사람과 물건이 없습니다</label>
+      <h3>손잡이</h3>
+      <label><input type="radio" name="hand" value="right" checked /> 오른손잡이</label>
+      <label><input type="radio" name="hand" value="left" /> 왼손잡이</label>
+      <p class="muted">노트북을 옆에 두고 측면에서 전신이 보이게 서세요. 영상은 이 노트북 밖으로 나가지 않고 저장하지도 않습니다.</p>
+      <button id="begin" disabled>시작</button>
+      <p id="error" hidden></p>
+    </section>
+
+    <section data-screen="setup" hidden>
+      <h2>위치 맞추기</h2>
+      <p id="hints" class="hint">카메라를 준비하는 중…</p>
+    </section>
+
+    <section data-screen="calibrate" hidden>
+      <h2>보정: 준비 자세(앙 가르드)로 가만히 서 있으세요</h2>
+      <p class="hint">진행 <span id="cal-progress">0</span></p>
+      <p id="cal-error" class="hint"></p>
+    </section>
+
+    <div class="layout">
+      <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+      <section data-screen="practice" hidden id="practice-panel">
+        <h2>연습: 런지를 반복하세요</h2>
+        <p id="stats" class="hint">총 0회</p>
+        <p id="practice-hint" class="muted"></p>
+        <div id="cards"></div>
+      </section>
+    </div>
+
+    <script type="module" src="/src/practice/main.ts"></script>
+  </body>
+</html>
