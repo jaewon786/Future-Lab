@@ -30,7 +30,12 @@ export function findPeaks(
     const prev = (values[i - 1] as number) * sign;
     const next = (values[i + 1] as number) * sign;
     if (!Number.isFinite(v) || !Number.isFinite(prev) || !Number.isFinite(next)) continue;
-    if (v >= threshold * sign && v > prev && v >= next) {
+    if (v < threshold * sign || v <= prev || v < next) continue;
+    // 평평한 구간이면 끝까지 넘어가 본다: 그 뒤에 값이 떨어져야 피크다 (더 오르거나 끝나면 아님)
+    let j = i + 1;
+    while (j < n && (values[j] as number) * sign === v) j++;
+    const after = (values[j] as number) * sign;
+    if (j < n && Number.isFinite(after) && after < v) {
       candidates.push({ index: i, tMs: times[i] as number, value: values[i] as number });
     }
   }

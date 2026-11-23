@@ -6,14 +6,22 @@ export const LEFT_WRIST = 15;
 export const RIGHT_WRIST = 16;
 
 export interface PoseClapOptions {
-  /** 두 손목 거리(정규화 좌표)가 이 값 이하인 극소점만 박수로 봄 */
+  /** 두 손목 거리(화면 높이 단위)가 이 값 이하인 극소점만 박수로 봄 */
   readonly maxWristGap: number;
   /** 손목 신뢰도가 이보다 낮은 프레임은 건너뜀 */
   readonly minVisibility: number;
   readonly minIntervalMs: number;
+  /** 카메라 화면 너비 ÷ 높이. 관절 x는 너비, y는 높이 기준이라 거리 계산 전에 맞춘다 */
+  readonly aspectRatio: number;
 }
 
-export const DEFAULT_POSE_CLAP: PoseClapOptions = { maxWristGap: 0.05, minVisibility: 0.5, minIntervalMs: 1000 };
+/** 기록기는 640×480(4:3)으로 촬영한다 */
+export const DEFAULT_POSE_CLAP: PoseClapOptions = {
+  maxWristGap: 0.05,
+  minVisibility: 0.5,
+  minIntervalMs: 1000,
+  aspectRatio: 4 / 3,
+};
 
 /** 웹캠 포즈에서 두 손목이 가장 가까워지는 순간(박수)의 시각 목록 */
 export function detectClapsPose(frames: readonly PoseFrame[], opts: PoseClapOptions = DEFAULT_POSE_CLAP): number[] {
@@ -24,7 +32,7 @@ export function detectClapsPose(frames: readonly PoseFrame[], opts: PoseClapOpti
     const r = f.landmarks[RIGHT_WRIST];
     if (!l || !r || l.visibility < opts.minVisibility || r.visibility < opts.minVisibility) continue;
     times.push(f.tMs);
-    gaps.push(Math.hypot(l.x - r.x, l.y - r.y));
+    gaps.push(Math.hypot((l.x - r.x) * opts.aspectRatio, l.y - r.y));
   }
   return findPeaks(times, gaps, { threshold: opts.maxWristGap, minIntervalMs: opts.minIntervalMs, mode: 'min' }).map(
     (p) => p.tMs,

@@ -3,9 +3,13 @@ export const SESSION_VERSION = 1;
 /** MediaPipe Pose 관절 수 */
 export const POSE_LANDMARK_COUNT = 33;
 const MAX_ERRORS = 20;
+/** IMU 값 허용 범위. @fc/link의 메시지 검증과 같은 값이다 (core는 link에 의존하지 않음). */
+export const IMU_MAX_ABS_ACCEL = 200;
+export const IMU_MAX_ABS_ROTATION = 5000;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 
 export interface Landmark {
-  /** 화면 너비 기준 정규화 좌표 (0~1 근처, 화면 밖이면 범위를 벗어날 수 있음) */
+  /** 정규화 좌표: x는 화면 너비, y는 화면 높이 기준 (0~1 근처, 화면 밖이면 벗어날 수 있음) */
   readonly x: number;
   readonly y: number;
   /** 관절 신뢰도 0~1 */
@@ -62,10 +66,19 @@ function validLandmark(l: unknown): boolean {
   );
 }
 
+const inRange = (v: unknown, maxAbs: number): boolean => isNum(v) && Math.abs(v) <= maxAbs;
+
 function validImu(s: Fields): boolean {
   const { accel: a, rotation: r } = s;
   return (
-    isObject(a) && isNum(a.x) && isNum(a.y) && isNum(a.z) && isObject(r) && isNum(r.alpha) && isNum(r.beta) && isNum(r.gamma)
+    isObject(a) &&
+    inRange(a.x, IMU_MAX_ABS_ACCEL) &&
+    inRange(a.y, IMU_MAX_ABS_ACCEL) &&
+    inRange(a.z, IMU_MAX_ABS_ACCEL) &&
+    isObject(r) &&
+    inRange(r.alpha, IMU_MAX_ABS_ROTATION) &&
+    inRange(r.beta, IMU_MAX_ABS_ROTATION) &&
+    inRange(r.gamma, IMU_MAX_ABS_ROTATION)
   );
 }
 
@@ -81,7 +94,7 @@ export function validateSession(raw: unknown): SessionValidation {
   };
 
   if (raw.version !== SESSION_VERSION) add(`version: ${SESSION_VERSION}이어야 함`);
-  if (typeof raw.recordedAt !== 'string' || Number.isNaN(Date.parse(raw.recordedAt))) {
+  if (typeof raw.recordedAt !== 'string' || !ISO_DATE.test(raw.recordedAt) || Number.isNaN(Date.parse(raw.recordedAt))) {
     add('recordedAt: ISO 날짜 문자열이어야 함');
   }
   const dev = raw.device;
@@ -96,7 +109,9 @@ export function validateSession(raw: unknown): SessionValidation {
       : `관절 ${POSE_LANDMARK_COUNT}개(x, y, visibility 0~1)가 필요함`,
   );
   checkTimeline(raw.imuSamples, 'imuSamples', add, (s) =>
-    validImu(s) ? null : 'accel{x,y,z}, rotation{alpha,beta,gamma} 숫자가 필요함',
+    validImu(s)
+      ? null
+      : `accel{x,y,z}(±${IMU_MAX_ABS_ACCEL}), rotation{alpha,beta,gamma}(±${IMU_MAX_ABS_ROTATION}) 숫자가 필요함`,
   );
   checkTimeline(raw.labels, 'labels', add, (l) =>
     (LABEL_KINDS as readonly unknown[]).includes(l.kind) ? null : `kind는 ${LABEL_KINDS.join('/')} 중 하나여야 함`,
