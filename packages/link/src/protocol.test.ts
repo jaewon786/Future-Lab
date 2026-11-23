@@ -45,3 +45,10 @@ describe('parseMessage', () => {
     expect(parseMessage(raw)).toBeNull();
   });
 });
+
+describe('parseMessage — 시각 상한', () => {
+  it('비정상적으로 큰 시각은 버린다', () => {
+    expect(parseMessage({ ...imu, phoneTimeMs: 1e300 })).toBeNull();
+    expect(parseMessage({ type: 'ping', seq: 1, laptopSendMs: 1e12 })).toBeNull();
+  });
+});

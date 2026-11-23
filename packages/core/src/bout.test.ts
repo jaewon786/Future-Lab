@@ -77,3 +77,36 @@ describe('createBout (에페 경기)', () => {
     expect(draw.state().winner).toBe('draw');
   });
 });
+
+describe('createBout — 늦게 확정되는 입력 (폰 찌르기)', () => {
+  it('resolveDelayMs 동안 기다려, 늦게 도착한 먼저 찌른 쪽을 반영한다', () => {
+    const bout = createBout({ resolveDelayMs: 450 });
+    bout.thrust('opponent', { tMs: 1100, ...inReach });
+    expect(bout.tick(1200)).toEqual([]);
+    // 사용자는 1000에 찔렀지만 폰 확정이 늦어 1450에 도착
+    bout.thrust('user', { tMs: 1000, ...inReach });
+    expect(bout.tick(1500)).toEqual([{ type: 'touch', who: 'user', tMs: 1000 }]);
+    expect(bout.state().score).toEqual({ user: 1, opponent: 0 });
+  });
+
+  it('늦게 도착해도 40ms 안이면 동시 타격', () => {
+    const bout = createBout({ resolveDelayMs: 450 });
+    bout.thrust('opponent', { tMs: 1020, ...inReach });
+    bout.thrust('user', { tMs: 1000, ...inReach });
+    expect(bout.tick(1500)).toEqual([{ type: 'touch', who: 'double', tMs: 1000 }]);
+  });
+});
+
+describe('createBout — 시간 종료와 득점이 겹칠 때', () => {
+  it('득점을 확정하는 순간 시간이 다 됐으면 바로 끝낸다', () => {
+    const bout = createBout({ durationMs: 1000, resetMs: 1500 });
+    bout.tick(0);
+    bout.thrust('user', { tMs: 990, ...inReach });
+    const events = bout.tick(1050);
+    expect(events).toEqual([
+      { type: 'touch', who: 'user', tMs: 990 },
+      { type: 'end', winner: 'user', tMs: 1050 },
+    ]);
+    expect(bout.state().phase).toBe('ended');
+  });
+});
