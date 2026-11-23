@@ -1,6 +1,4 @@
 import QRCode from 'qrcode';
-import { estimateClockOffset, type ClockOffsetEstimate, type Message, type PingSample } from '@fc/link';
-import type { Link } from '@fc/link/peer';
 
 /** id로 요소를 찾는다. 없으면 페이지 구성 오류이므로 바로 알린다. */
 export function el<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -40,48 +38,5 @@ export async function showAndCopyJson(data: unknown, out: HTMLElement): Promise<
   }
 }
 
-/** ping을 보내고 pong을 모아 폰-노트북 시계 차이를 추정한다. */
-export class ClockSync {
-  private readonly link: Link;
-  private seq = 0;
-  private readonly pending = new Map<number, number>();
-  readonly samples: PingSample[] = [];
-
-  constructor(link: Link) {
-    this.link = link;
-  }
-
-  /** 새 측정 시작 시 이전 ping 기록을 버린다 (늦게 온 이전 pong이 섞이지 않게) */
-  reset(): void {
-    this.pending.clear();
-    this.samples.length = 0;
-  }
-
-  ping(): void {
-    const seq = this.seq++;
-    const laptopSendMs = performance.now();
-    this.pending.set(seq, laptopSendMs);
-    if (this.pending.size > 500) this.pending.delete(seq - 500);
-    this.link.send({ type: 'ping', seq, laptopSendMs });
-  }
-
-  /** pong이면 샘플로 기록하고 true. 보낸 시각은 폰이 돌려준 값 대신 노트북이 기억한 값을 쓴다. */
-  handle(msg: Message): boolean {
-    if (msg.type !== 'pong') return false;
-    const sent = this.pending.get(msg.seq);
-    if (sent === undefined) return true;
-    this.pending.delete(msg.seq);
-    this.samples.push({ laptopSendMs: sent, phoneTimeMs: msg.phoneTimeMs, laptopRecvMs: performance.now() });
-    if (this.samples.length > 2000) this.samples.splice(0, this.samples.length - 2000);
-    return true;
-  }
-
-  /** 최근 200개 샘플로 추정 (시계가 조금씩 어긋나는 것을 따라가기 위해) */
-  estimate(): ClockOffsetEstimate | null {
-    return estimateClockOffset(this.samples.slice(-200));
-  }
-
-  rttsMs(): number[] {
-    return this.samples.map((s) => s.laptopRecvMs - s.laptopSendMs);
-  }
-}
+/** 스파이크 페이지들이 쓰던 이름 (구현은 @fc/link의 ClockSession) */
+export { ClockSession as ClockSync } from '@fc/link';
