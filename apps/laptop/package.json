@@ -4,8 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/prepare-mediapipe.mjs",
+    "prebuild": "node ../../scripts/prepare-mediapipe.mjs",
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.3",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6"
   }
 }

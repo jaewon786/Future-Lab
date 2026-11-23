@@ -6,3 +6,7 @@ coverage/
 .env.*
 .claude/settings.local.json
 .DS_Store
+
+# MediaPipe 자산 (scripts/prepare-mediapipe.mjs가 생성)
+apps/laptop/public/mediapipe/
+apps/laptop/public/models/

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>연결 지연 측정</title>
+    <style>body{font-family:system-ui,sans-serif;margin:16px;max-width:900px;line-height:1.5}button,select,input{font-size:16px;padding:8px 12px;margin:4px 0}pre{background:#f3f4f6;padding:12px;white-space:pre-wrap;word-break:break-all}.stage{position:relative;display:inline-block}.stage video,.stage canvas{width:100%;max-width:640px}.stage canvas{position:absolute;left:0;top:0}@media(prefers-color-scheme:dark){body{background:#111;color:#eee}pre{background:#222}}</style>
+  </head>
+  <body>
+    <h1>연결 지연 측정</h1>
+    <p id="status">신호 서버에 연결하는 중…</p>
+    <canvas id="qr"></canvas>
+    <p><a id="url" target="_blank" rel="noopener"></a></p>
+    <label>네트워크 <select id="network"><option value="wifi">같은 Wi-Fi</option><option value="hotspot">폰 핫스팟</option><option value="other">기타</option></select></label>
+    <p><button id="start" disabled>60초 측정 시작</button> <button id="copy" disabled>결과 복사</button></p>
+    <pre id="stats"></pre>
+    <pre id="result"></pre>
+    <script type="module" src="/src/spikes/link.ts"></script>
+  </body>
+</html>

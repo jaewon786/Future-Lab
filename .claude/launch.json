@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "laptop-preview", "runtimeExecutable": "npm", "runtimeArgs": ["run", "preview", "-w", "@fc/laptop", "--", "--port", "4173", "--strictPort"], "port": 4173 },
+    { "name": "phone-preview", "runtimeExecutable": "npm", "runtimeArgs": ["run", "preview", "-w", "@fc/phone", "--", "--port", "4174", "--strictPort"], "port": 4174 }
+  ]
+}
