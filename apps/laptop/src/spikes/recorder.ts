@@ -11,7 +11,7 @@ import {
 import { phoneToLaptopMs, type ImuSample } from '@fc/link';
 import { hostLink } from '@fc/link/peer';
 import { ClockSync, el, phoneSensorUrl, showJoinQr } from './common';
-import { createPose, drawPose, openCamera, toLandmarks } from './pose';
+import { createPose, drawPose, openCamera, toLandmarks } from '../pose/mediapipe';
 
 const MIN_SYNC_SAMPLES = 20;
 /** 60Hz 기준 약 55분. 상대 기기가 메시지를 쏟아내도 메모리가 넘치지 않게 막는다 */
