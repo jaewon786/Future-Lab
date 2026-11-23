@@ -4,5 +4,11 @@
   "private": true,
   "type": "module",
   "description": "폰-노트북 WebRTC 연결, 시계 동기화, 메시지 형식",
-  "exports": { ".": "./src/index.ts" }
+  "exports": {
+    ".": "./src/index.ts",
+    "./peer": "./src/peer.ts"
+  },
+  "dependencies": {
+    "peerjs": "^1.5.5"
+  }
 }

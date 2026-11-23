@@ -1,0 +1,54 @@
+name: Pages
+
+# 폰 센서 권한(DeviceMotion)과 카메라는 HTTPS에서만 동작하므로 측정 페이지를 GitHub Pages로 배포한다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: node scripts/prepare-mediapipe.mjs
+      - run: npm run build -w @fc/laptop
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/laptop/
+      - run: npm run build -w @fc/phone
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/phone/
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -r apps/laptop/dist site/laptop
+          cp -r apps/phone/dist site/phone
+          printf '<!doctype html><meta charset="utf-8"><title>펜싱 코치</title><ul><li><a href="laptop/">노트북</a></li><li><a href="phone/">폰</a></li></ul>\n' > site/index.html
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

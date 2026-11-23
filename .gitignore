@@ -6,3 +6,6 @@ coverage/
 .env.*
 .claude/settings.local.json
 .DS_Store
+
+# MediaPipe 포즈 모델 (scripts/prepare-mediapipe.mjs가 내려받음)
+apps/laptop/public/models/

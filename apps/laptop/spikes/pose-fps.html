@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>포즈 처리 속도 측정</title>
+    <style>body{font-family:system-ui,sans-serif;margin:16px;max-width:900px;line-height:1.5}button,select,input{font-size:16px;padding:8px 12px;margin:4px 0}pre{background:#f3f4f6;padding:12px;white-space:pre-wrap;word-break:break-all}.stage{position:relative;display:inline-block}.stage video,.stage canvas{width:100%;max-width:640px}.stage canvas{position:absolute;left:0;top:0}@media(prefers-color-scheme:dark){body{background:#111;color:#eee}pre{background:#222}}</style>
+  </head>
+  <body>
+    <h1>포즈 처리 속도 측정</h1>
+    <p>
+      <label>해상도 <select id="resolution"><option value="640x480">640×480</option><option value="480x360">480×360</option></select></label>
+      <label>처리 방식 <select id="delegate"><option value="GPU">GPU</option><option value="CPU">CPU</option></select></label>
+      <button id="start">30초 측정 시작</button> <button id="copy" disabled>결과 복사</button>
+    </p>
+    <p id="status">카메라 권한을 허용해야 합니다. 영상은 이 노트북 밖으로 나가지 않습니다.</p>
+    <pre id="stats"></pre>
+    <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+    <pre id="result"></pre>
+    <script type="module" src="/src/spikes/pose-fps.ts"></script>
+  </body>
+</html>
