@@ -9,9 +9,12 @@ export function el<T extends HTMLElement = HTMLElement>(id: string): T {
   return e as T;
 }
 
-/** data-screen 섹션 중 하나만 보이게 하고 body[data-screen]에 기록한다 (E2E가 이 값을 본다) */
+/**
+ * data-screen 섹션 중 하나만 보이게 하고 body[data-screen]에 기록한다 (E2E가 이 값을 본다).
+ * body도 data-screen을 갖게 되므로 고를 때 섹션만 골라야 한다 — body까지 숨기면 페이지 전체가 사라진다.
+ */
 export function show(screen: string): void {
-  document.querySelectorAll<HTMLElement>('[data-screen]').forEach((s) => {
+  document.querySelectorAll<HTMLElement>('section[data-screen]').forEach((s) => {
     s.hidden = s.dataset.screen !== screen;
   });
   document.body.dataset.screen = screen;
