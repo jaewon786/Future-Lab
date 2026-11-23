@@ -48,7 +48,7 @@ We'll know we're right when **팀 외 사용자 5명이 설명 없이 보정부�
 | # | Milestone | Outcome | Status | Plan |
 |---|---|---|---|---|
 | 1 | 기술 검증 | 폰 센서·웹캠으로 실시간 판정이 가능한지 수치로 결론 (계속 / 웹캠 단독 모드 전환) | in-progress | `.claude/plans/technical-validation.plan.md` |
-| 2 | 자세 연습 모드 | 사용자가 보정 후 런지를 반복하며 실시간 자세 피드백을 받음 | pending | — |
+| 2 | 자세 연습 모드 | 사용자가 보정 후 런지를 반복하며 실시간 자세 피드백을 받음 | in-progress | `.claude/plans/posture-practice.plan.md` |
 | 3 | 대결 모드 | 사용자가 가상 상대와 에페 1판(5점 또는 3분)을 끝까지 치름 | pending | — |
 | 4 | 경기 후 리포트 | 사용자가 오류 빈도·찌르기 속도 편차·득실점을 확인 | pending | — |
 | 5 | 시연 준비 | 팀 외 5명 시험 사용과 리허설 3회를 무사고로 통과 | pending | — |
