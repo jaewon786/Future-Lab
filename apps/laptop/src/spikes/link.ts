@@ -12,7 +12,10 @@ const startBtn = el<HTMLButtonElement>('start');
 const copyBtn = el<HTMLButtonElement>('copy');
 const network = el<HTMLSelectElement>('network');
 
-const { id, link } = await hostLink();
+const { id, link } = await hostLink().catch((err: unknown) => {
+  status.textContent = `신호 서버 연결 실패: ${err instanceof Error ? err.message : String(err)} — 새로고침하세요.`;
+  throw err;
+});
 await showJoinQr(el<HTMLCanvasElement>('qr'), el<HTMLAnchorElement>('url'), phoneSensorUrl(id));
 status.textContent = '폰으로 QR을 찍어 센서 페이지를 열고 "센서 허용"을 누르세요.';
 
@@ -20,6 +23,7 @@ const sync = new ClockSync(link);
 /** IMU 수신 기록: 받은 시각(노트북)과 폰 시각 */
 const imu: { recvMs: number; phoneTimeMs: number }[] = [];
 let startedAt = 0;
+let running = false;
 let timer = 0;
 
 link.onStatus((s, detail) => {
@@ -29,7 +33,7 @@ link.onStatus((s, detail) => {
 
 link.onMessage((msg) => {
   if (sync.handle(msg)) return;
-  if (msg.type === 'imu' && startedAt > 0) imu.push({ recvMs: performance.now(), phoneTimeMs: msg.phoneTimeMs });
+  if (msg.type === 'imu' && running) imu.push({ recvMs: performance.now(), phoneTimeMs: msg.phoneTimeMs });
 });
 
 function summary() {
@@ -67,7 +71,8 @@ function render() {
 
 startBtn.addEventListener('click', () => {
   startedAt = performance.now();
-  sync.samples.length = 0;
+  running = true;
+  sync.reset();
   imu.length = 0;
   startBtn.disabled = true;
   copyBtn.disabled = true;
@@ -77,6 +82,7 @@ startBtn.addEventListener('click', () => {
     render();
     if (performance.now() - startedAt >= DURATION_MS) {
       clearInterval(timer);
+      running = false;
       status.textContent = '측정 끝 — 결과를 복사해 docs/spike-report.md에 붙이세요.';
       startBtn.disabled = false;
       copyBtn.disabled = false;

@@ -33,7 +33,12 @@ export async function openCamera(video: HTMLVideoElement, width: number, height:
     audio: false,
   });
   video.srcObject = stream;
-  await video.play();
+  try {
+    await video.play();
+  } catch (err) {
+    stream.getTracks().forEach((t) => t.stop());
+    throw err;
+  }
   return stream;
 }
 

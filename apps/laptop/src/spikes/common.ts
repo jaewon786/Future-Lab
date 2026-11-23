@@ -51,6 +51,12 @@ export class ClockSync {
     this.link = link;
   }
 
+  /** 새 측정 시작 시 이전 ping 기록을 버린다 (늦게 온 이전 pong이 섞이지 않게) */
+  reset(): void {
+    this.pending.clear();
+    this.samples.length = 0;
+  }
+
   ping(): void {
     const seq = this.seq++;
     const laptopSendMs = performance.now();
@@ -66,6 +72,7 @@ export class ClockSync {
     if (sent === undefined) return true;
     this.pending.delete(msg.seq);
     this.samples.push({ laptopSendMs: sent, phoneTimeMs: msg.phoneTimeMs, laptopRecvMs: performance.now() });
+    if (this.samples.length > 2000) this.samples.splice(0, this.samples.length - 2000);
     return true;
   }
 

@@ -73,7 +73,10 @@ export interface ThrustEvaluation {
   readonly falsePositives: number;
   /** truePositives / thrustLabels (라벨 없으면 NaN) */
   readonly recall: number;
-  /** falsePositives / otherLabels (일반 동작 라벨 없으면 NaN) */
+  /**
+   * falsePositives / otherLabels — 일반 동작 1회당 오탐 수. 라벨 사이의 빈 시간에 생긴 오탐도
+   * 포함하므로 100%를 넘을 수 있다. 일반 동작 라벨이 없으면 NaN.
+   */
   readonly falsePositiveRate: number;
 }
 

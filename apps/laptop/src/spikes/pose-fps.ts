@@ -39,8 +39,22 @@ async function run(): Promise<void> {
   let measureStart = 0;
   status.textContent = `측정 중 (${made.delegate}${made.delegate !== delegateSel.value ? ', GPU 실패로 CPU 사용' : ''})`;
 
+  const fail = (err: unknown) => {
+    status.textContent = `측정 중 오류: ${err instanceof Error ? err.message : String(err)}`;
+    startBtn.disabled = false;
+  };
   const loop = () => {
+    try {
+      step();
+    } catch (err) {
+      fail(err);
+    }
+  };
+  const step = () => {
     const now = performance.now();
+    if (document.hidden) {
+      status.textContent = '탭이 가려져 측정이 왜곡됨 — 이 탭을 앞에 두고 다시 측정하세요.';
+    }
     if (video.currentTime !== lastVideoTime) {
       lastVideoTime = video.currentTime;
       const s = performance.now();

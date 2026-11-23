@@ -14,7 +14,10 @@ import { ClockSync, el, phoneSensorUrl, showJoinQr } from './common';
 import { createPose, drawPose, openCamera, toLandmarks } from './pose';
 
 const MIN_SYNC_SAMPLES = 20;
-const KEYS: Record<string, LabelKind> = { t: 'thrust', o: 'other', c: 'clap' };
+/** 60Hz 기준 약 55분. 상대 기기가 메시지를 쏟아내도 메모리가 넘치지 않게 막는다 */
+const MAX_IMU_SAMPLES = 200_000;
+/** 물리 키 위치로 판단한다 — 한글 입력 상태에서도 T/O/C 자리를 누르면 라벨이 남는다 */
+const KEYS: Record<string, LabelKind> = { KeyT: 'thrust', KeyO: 'other', KeyC: 'clap' };
 
 const video = el<HTMLVideoElement>('video');
 const canvas = el<HTMLCanvasElement>('overlay');
@@ -23,8 +26,12 @@ const counts = el('counts');
 const recordBtn = el<HTMLButtonElement>('record');
 const saveBtn = el<HTMLButtonElement>('save');
 const nameInput = el<HTMLInputElement>('name');
+const phoneInput = el<HTMLInputElement>('phone');
 
-const { id, link } = await hostLink();
+const { id, link } = await hostLink().catch((err: unknown) => {
+  status.textContent = `신호 서버 연결 실패: ${err instanceof Error ? err.message : String(err)} — 새로고침하세요.`;
+  throw err;
+});
 await showJoinQr(el<HTMLCanvasElement>('qr'), el<HTMLAnchorElement>('url'), phoneSensorUrl(id));
 const sync = new ClockSync(link);
 let phoneLabel = '연결 안 됨';
@@ -42,12 +49,13 @@ let lastLabel = '';
 
 link.onMessage((msg) => {
   if (sync.handle(msg)) return;
-  if (msg.type === 'imu' && recording) rawImu.push(msg);
+  if (msg.type === 'imu' && recording && rawImu.length < MAX_IMU_SAMPLES) rawImu.push(msg);
 });
 
 window.addEventListener('keydown', (e) => {
-  const kind = KEYS[e.key.toLowerCase()];
-  if (!recording || !kind) return;
+  const kind = KEYS[e.code];
+  const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+  if (!recording || !kind || e.repeat || typing) return;
   labels.push({ tMs: performance.now() - t0, kind });
   lastLabel = `${kind} @ ${((performance.now() - t0) / 1000).toFixed(1)}s`;
 });
@@ -56,7 +64,7 @@ function render(): void {
   const by = (k: LabelKind) => labels.filter((l) => l.kind === k).length;
   counts.textContent = [
     `폰: ${phoneLabel} · 시계 동기화 샘플 ${sync.samples.length}/${MIN_SYNC_SAMPLES}`,
-    `${recording ? '● 기록 중' : '대기'} · 포즈 ${poseFrames.length} · IMU ${rawImu.length}`,
+    `${recording ? '● 기록 중' : '대기'} · 포즈 ${poseFrames.length} · IMU ${rawImu.length}${rawImu.length >= MAX_IMU_SAMPLES ? ' (상한 도달 — 멈추고 저장하세요)' : ''}`,
     `찌르기(T) ${by('thrust')} · 일반 동작(O) ${by('other')} · 박수(C) ${by('clap')} · 마지막: ${lastLabel || '—'}`,
   ].join('\n');
   recordBtn.disabled = sync.samples.length < MIN_SYNC_SAMPLES && !recording;
@@ -126,7 +134,7 @@ saveBtn.addEventListener('click', () => {
   const session = {
     version: SESSION_VERSION,
     recordedAt: new Date().toISOString(),
-    device: { laptop: navigator.userAgent, phone: phoneLabel },
+    device: { laptop: navigator.userAgent, phone: phoneInput.value.trim() || 'unspecified' },
     clockOffsetMs: est.offsetMs,
     poseFrames,
     imuSamples,
@@ -144,6 +152,7 @@ saveBtn.addEventListener('click', () => {
   a.href = URL.createObjectURL(blob);
   a.download = `${name}-${stamp}.json`;
   a.click();
-  URL.revokeObjectURL(a.href);
+  // 바로 해제하면 일부 브라우저에서 다운로드가 취소된다
+  setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   status.textContent = `저장함: ${a.download} → fixtures/spike/ 로 옮기세요.`;
 });

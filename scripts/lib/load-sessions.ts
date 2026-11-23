@@ -25,8 +25,8 @@ export function loadSessions(dir: string): LoadedSession[] {
     let raw: unknown;
     try {
       raw = JSON.parse(readFileSync(path, 'utf8'));
-    } catch {
-      console.error(`건너뜀 ${f}: JSON이 아님`);
+    } catch (err) {
+      console.error(`건너뜀 ${f}: ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
     const r = validateSession(raw);

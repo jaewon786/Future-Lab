@@ -25,6 +25,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check
       - run: node scripts/prepare-mediapipe.mjs
       - run: npm run build -w @fc/laptop
         env:

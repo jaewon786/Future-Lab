@@ -14,6 +14,10 @@ import { loadSessions, pct, type LoadedSession } from './lib/load-sessions';
 const args = process.argv.slice(2);
 const tolIdx = args.indexOf('--tolerance');
 const toleranceMs = tolIdx >= 0 ? Number(args[tolIdx + 1]) : 300;
+if (!Number.isFinite(toleranceMs) || toleranceMs <= 0) {
+  console.error('--tolerance 뒤에 양수(ms)를 주세요. 예: --tolerance 300');
+  process.exit(1);
+}
 const dir = args.find((a, i) => !a.startsWith('--') && (tolIdx < 0 || i !== tolIdx + 1)) ?? 'fixtures/spike';
 
 const RECALL_TARGET = 0.9;
@@ -113,6 +117,10 @@ if (people.length >= 2) {
   console.log('\n(기록한 사람이 1명이라 교차 검증 생략 — 판정은 과적합 가능성이 있음)');
 }
 
+if (verdict.otherLabels === 0) {
+  console.log('\n경고: 일반 동작(O) 라벨이 없어 오탐률을 계산할 수 없음 — 일반 동작도 기록하세요.');
+}
+console.log('오탐률 = 찌르기 라벨과 짝이 안 된 감지 수 ÷ 일반 동작(O) 라벨 수 (일반 동작 1회당 오탐, 100%를 넘을 수 있음)');
 const pass = verdict.recall >= RECALL_TARGET && verdict.falsePositiveRate <= FPR_TARGET;
 console.log(
   `\nG2 찌르기 기준: ${pass ? 'PASS' : 'FAIL'} (재현율 ${pct(verdict.recall)} / 목표 ${pct(RECALL_TARGET)}, 오탐 ${pct(verdict.falsePositiveRate)} / 목표 ${pct(FPR_TARGET)} 이하)\n`,

@@ -43,7 +43,8 @@ function onMotion(e: DeviceMotionEvent): void {
     missingAccel++;
     return;
   }
-  reportedIntervalMs = e.interval;
+  // 표준은 ms지만 일부 엔진은 초 단위로 준다 (1 미만이면 초로 본다)
+  reportedIntervalMs = e.interval < 1 ? e.interval * 1000 : e.interval;
   const sample: ImuSample = {
     type: 'imu',
     phoneTimeMs: e.timeStamp,
