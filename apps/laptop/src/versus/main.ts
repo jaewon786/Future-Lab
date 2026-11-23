@@ -17,6 +17,7 @@ import { phoneControllerUrl } from '../shared/phone-url';
 import { DEFAULT_SETUP_FLOW, SetupFlow } from '../shared/setup-flow';
 import { createVersusGame, type InputMode, type VersusGame } from './game';
 
+const PAIR_TIMEOUT_MS = 60_000;
 const query = new URLSearchParams(location.search);
 const replayUrl = query.get('replay');
 const video = el<HTMLVideoElement>('video');
@@ -60,7 +61,22 @@ async function prepareInputs(mode: InputMode): Promise<Inputs> {
   phone.onStatus((s) => {
     el('phone-status').textContent = s === 'connected' ? '폰 연결됨' : `폰: ${s}`;
   });
-  await new Promise<void>((resolve) => phone.onStatus((s) => s === 'connected' && resolve()));
+  await new Promise<void>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      phone.stop();
+      reject(new Error('폰이 1분 안에 연결되지 않았습니다 — 다시 시도하거나 "웹캠만"을 고르세요'));
+    }, PAIR_TIMEOUT_MS);
+    phone.onStatus((s) => {
+      if (s !== 'connected') return;
+      window.clearTimeout(timer);
+      resolve();
+    });
+  });
+  // 경기 중 연결이 끊기면 알린다 (폰은 2초마다 다시 연결을 시도한다)
+  phone.onStatus((s) => {
+    if (s === 'connected') el('message').textContent = '폰 다시 연결됨';
+    else el('message').textContent = '폰 연결 끊김 — 찌르기가 인정되지 않습니다. 다시 연결하는 중…';
+  });
   return { pose, imu: phone };
 }
 

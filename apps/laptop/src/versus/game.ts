@@ -57,6 +57,8 @@ export interface VersusGame {
 }
 
 const ARM_HISTORY_MS = 1000;
+/** 프레임 시각에서 이보다 먼 폰 찌르기는 시계 오류로 보고 버린다 */
+const STALE_THRUST_MS = 3000;
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 
 export function createVersusGame(cal: Calibration, opts: VersusOptions): VersusGame {
@@ -73,9 +75,20 @@ export function createVersusGame(cal: Calibration, opts: VersusOptions): VersusG
     startXM: gap / 2,
     ...(opts.dummy ? { speedMps: 0, attackRatePerS: 0, parryChance: 0 } : {}),
   });
-  const bout = createBout();
+  const thrustParams = opts.thrustParams ?? DEFAULT_THRUST_PARAMS;
+  // 폰 찌르기는 회전 검사(rotationWindowMs) + 팔 각도 확인(windowMs)만큼 늦게 확정되므로 판정도 그만큼 기다린다
+  const bout = createBout(
+    opts.mode === 'phone' ? { resolveDelayMs: thrustParams.rotationWindowMs + DEFAULT_FUSION.windowMs } : {},
+  );
   const webcam = createWebcamThrustDetector(cal);
-  const imu = createThrustDetector(opts.thrustParams ?? DEFAULT_THRUST_PARAMS);
+  const imu = createThrustDetector(thrustParams);
+  /** 찌른 순간의 거리·막기 상태로 판정하기 위한 짧은 이력 */
+  const history: { tMs: number; distanceM: number; parrying: boolean }[] = [];
+  const at = (tMs: number) =>
+    history.reduce<(typeof history)[number] | undefined>(
+      (best, h) => (!best || Math.abs(h.tMs - tMs) < Math.abs(best.tMs - tMs) ? h : best),
+      undefined,
+    );
   const imuThrusts: number[] = [];
   const armHistory: { tMs: number; swordArmDeg: number }[] = [];
   let started = false;
@@ -91,6 +104,12 @@ export function createVersusGame(cal: Calibration, opts: VersusOptions): VersusG
     // 폰 찌르기는 칼 팔 각도를 전후 windowMs 동안 본 뒤에 판정한다
     const times: number[] = [];
     let fusion: FusionResult | null = null;
+    // 시계가 어긋나 미래·먼 과거로 찍힌 찌르기는 버린다 (뒤의 찌르기를 막지 않게)
+    while (imuThrusts.length > 0) {
+      const head = imuThrusts[0] as number;
+      if (head > frame.tMs + STALE_THRUST_MS || head < frame.tMs - STALE_THRUST_MS) imuThrusts.shift();
+      else break;
+    }
     while (imuThrusts.length > 0 && frame.tMs >= (imuThrusts[0] as number) + DEFAULT_FUSION.windowMs) {
       const t = imuThrusts.shift() as number;
       fusion = fuseThrust(t, armHistory);
@@ -122,8 +141,13 @@ export function createVersusGame(cal: Calibration, opts: VersusOptions): VersusG
       if (bout.state().phase === 'fencing') {
         const step = opponent.step({ nowMs: frame.tMs, userXM: userX, userReachM: reachM });
         opp = step.state;
+        history.push({ tMs: frame.tMs, distanceM: opp.xM - userX, parrying: opp.parrying });
+        while (history.length > 0 && frame.tMs - (history[0] as { tMs: number }).tMs > ARM_HISTORY_MS * 2) {
+          history.shift();
+        }
         for (const tMs of times) {
-          bout.thrust('user', { tMs, distanceM: opp.xM - userX, reachM, blocked: opp.parrying });
+          const then = at(tMs) ?? { distanceM: opp.xM - userX, parrying: opp.parrying };
+          bout.thrust('user', { tMs, distanceM: then.distanceM, reachM, blocked: then.parrying });
         }
         if (step.attack) {
           bout.thrust('opponent', {

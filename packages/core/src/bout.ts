@@ -7,10 +7,21 @@ export interface BoutOptions {
   readonly doubleWindowMs: number;
   /** 득점 후 다시 시작하기까지 (찌르기를 받지 않고 시계도 멈춤) */
   readonly resetMs: number;
+  /**
+   * 첫 유효 찌르기 뒤 판정을 이만큼 더 기다린다. 폰 찌르기처럼 늦게 확정되는 입력이
+   * 먼저 일어났는데도 뒤늦게 도착해 순서가 뒤집히는 것을 막는다 (폰 모드 ≈ 450ms).
+   */
+  readonly resolveDelayMs: number;
 }
 
 /** 5점 또는 3분, 동시 타격 40ms */
-export const DEFAULT_BOUT: BoutOptions = { touchesToWin: 5, durationMs: 180_000, doubleWindowMs: 40, resetMs: 1500 };
+export const DEFAULT_BOUT: BoutOptions = {
+  touchesToWin: 5,
+  durationMs: 180_000,
+  doubleWindowMs: 40,
+  resetMs: 1500,
+  resolveDelayMs: 0,
+};
 
 export interface ThrustInput {
   readonly tMs: number;
@@ -77,7 +88,7 @@ export function createBout(options: Partial<BoutOptions> = {}): Bout {
     if (pending.length === 0) return [];
     const first = pending.reduce((a, b) => (b.tMs < a.tMs ? b : a));
     const other = pending.find((p) => p.side !== first.side && Math.abs(p.tMs - first.tMs) <= opts.doubleWindowMs);
-    if (!other && nowMs - first.tMs <= opts.doubleWindowMs) return [];
+    if (!other && nowMs - first.tMs <= opts.doubleWindowMs + opts.resolveDelayMs) return [];
 
     pending = [];
     if (other) {
@@ -85,7 +96,8 @@ export function createBout(options: Partial<BoutOptions> = {}): Bout {
       score.opponent++;
     } else score[first.side]++;
     const events: BoutEvent[] = [{ type: 'touch', who: other ? 'double' : first.side, tMs: first.tMs }];
-    if (score.user >= opts.touchesToWin || score.opponent >= opts.touchesToWin) {
+    // 점수 도달 또는 이미 시간이 다 된 경우(마지막 득점) 바로 끝낸다
+    if (score.user >= opts.touchesToWin || score.opponent >= opts.touchesToWin || elapsedMs >= opts.durationMs) {
       events.push(finish(nowMs));
     } else {
       phase = 'touch';

@@ -45,7 +45,8 @@ function onMotion(e: DeviceMotionEvent): void {
   const r = e.rotationRate;
   const sample: ImuSample = {
     type: 'imu',
-    phoneTimeMs: e.timeStamp,
+    // pong과 같은 시계(performance.now)를 쓴다. 일부 브라우저는 e.timeStamp가 다른 기준이다
+    phoneTimeMs: performance.now(),
     accel: { x: a.x, y: a.y, z: a.z },
     rotation: { alpha: r?.alpha ?? 0, beta: r?.beta ?? 0, gamma: r?.gamma ?? 0 },
   };

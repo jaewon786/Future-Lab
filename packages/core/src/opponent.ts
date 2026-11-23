@@ -65,6 +65,8 @@ export interface Opponent {
   reset(nowMs: number): void;
 }
 
+const MAX_STEP_MS = 100;
+
 /** 시드 고정 난수 (mulberry32) */
 function seededRandom(seed: number): () => number {
   let a = seed >>> 0;
@@ -132,7 +134,8 @@ export function createOpponent(opts: OpponentOptions): Opponent {
     },
 
     step({ nowMs, userXM, userReachM }) {
-      const dtMs = lastNow === null ? 0 : Math.max(0, nowMs - lastNow);
+      // 포즈가 끊겼다 돌아오면 시간이 크게 뛴다 — 순간이동·연속 공격을 막으려고 한 번에 MAX_STEP_MS까지만 진행
+      const dtMs = lastNow === null ? 0 : Math.min(MAX_STEP_MS, Math.max(0, nowMs - lastNow));
       lastNow = nowMs;
       const distance = () => xM - userXM;
 
