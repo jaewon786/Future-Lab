@@ -1,4 +1,4 @@
-import { validateSession, type PoseFrame } from '@fc/core';
+import { validateSession, type PoseFrame, type SessionRecording } from '@fc/core';
 import { playTimeline } from '../shared/timeline';
 import type { PoseSource, PoseSourceFrame } from './pose-source';
 
@@ -33,9 +33,14 @@ export class ReplayPoseSource implements PoseSource {
 
 /** URL의 세션 기록 JSON을 읽어 재생 입력원을 만든다. 형식이 틀리면 이유를 담아 실패한다. */
 export async function loadReplay(url: string, opts: ReplayOptions = {}): Promise<ReplayPoseSource> {
+  return new ReplayPoseSource((await loadSessionFile(url)).poseFrames, opts);
+}
+
+/** URL의 세션 기록 JSON을 읽고 검증한다 (포즈와 IMU를 함께 재생할 때) */
+export async function loadSessionFile(url: string): Promise<SessionRecording> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`재생 기록을 읽지 못함: HTTP ${res.status}`);
   const check = validateSession(await res.json());
   if (!check.ok) throw new Error(`재생 기록 형식 오류: ${check.errors.slice(0, 3).join('; ')}`);
-  return new ReplayPoseSource(check.session.poseFrames, opts);
+  return check.session;
 }

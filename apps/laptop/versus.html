@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>펜싱 코치 · 대결</title>
+    <style>
+      :root { --bg: #ffffff; --fg: #111827; --muted: #6b7280; --panel: #f3f4f6; --user: #2563eb; --opp: #dc2626; --accent: #ca8a04; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #0b0f19; --fg: #f3f4f6; --muted: #9ca3af; --panel: #1f2937; --user: #60a5fa; --opp: #f87171; --accent: #facc15; } }
+      body { font-family: system-ui, sans-serif; margin: 16px; line-height: 1.5; background: var(--bg); color: var(--fg); }
+      button, select { font-size: 18px; padding: 10px 16px; }
+      label { display: block; margin: 6px 0; font-size: 18px; }
+      .hint { white-space: pre-line; font-size: 20px; font-weight: 600; }
+      .muted { color: var(--muted); }
+      #error { color: var(--opp); font-weight: 700; }
+      .hud { display: flex; gap: 24px; align-items: baseline; flex-wrap: wrap; }
+      #score { font-size: 56px; font-weight: 800; letter-spacing: 4px; font-variant-numeric: tabular-nums; }
+      #score::before { content: '나 '; font-size: 20px; color: var(--user); }
+      #score::after { content: ' 상대'; font-size: 20px; color: var(--opp); }
+      #clock { font-size: 32px; font-variant-numeric: tabular-nums; }
+      #message { font-size: 24px; font-weight: 700; color: var(--accent); min-height: 1.5em; }
+      #arena { width: 100%; max-width: 1100px; aspect-ratio: 16 / 9; display: block; background: var(--panel); }
+      .preview { position: relative; width: 240px; }
+      .preview video, .preview canvas { width: 240px; display: block; }
+      .preview canvas { position: absolute; left: 0; top: 0; }
+      .preview video[hidden] + canvas { position: static; background: var(--panel); }
+      #result-score { font-size: 64px; font-weight: 800; }
+    </style>
+  </head>
+  <body>
+    <h1>대결</h1>
+
+    <section data-screen="safety">
+      <h2>시작 전 확인</h2>
+      <label><input type="checkbox" id="strap" /> 폰을 쥔다면 손목 스트랩을 걸었습니다</label>
+      <label><input type="checkbox" id="space" /> 주변 2m 안에 사람과 물건이 없습니다</label>
+      <h3>찌르기 입력</h3>
+      <label><input type="radio" name="mode" value="phone" checked /> 폰 + 웹캠 (폰을 칼처럼 쥠)</label>
+      <label><input type="radio" name="mode" value="webcam" /> 웹캠만 (팔을 빠르게 뻗으면 찌르기)</label>
+      <h3>손잡이</h3>
+      <label><input type="radio" name="hand" value="right" checked /> 오른손잡이</label>
+      <label><input type="radio" name="hand" value="left" /> 왼손잡이</label>
+      <label>난이도
+        <select id="difficulty"><option value="easy">쉬움</option><option value="normal" selected>보통</option><option value="hard">어려움</option></select>
+      </label>
+      <p class="muted">에페 규칙: 먼저 5점 또는 3분. 40ms 안에 서로 찌르면 둘 다 1점. 영상은 이 노트북 밖으로 나가지 않습니다.</p>
+      <button id="begin" disabled>시작</button>
+      <p id="error" hidden></p>
+    </section>
+
+    <section data-screen="pair" hidden>
+      <h2>폰 연결: QR 코드를 폰으로 찍으세요</h2>
+      <canvas id="qr"></canvas>
+      <p><a id="pair-url" target="_blank" rel="noopener"></a></p>
+      <p id="phone-status" class="hint">폰 기다리는 중…</p>
+    </section>
+
+    <section data-screen="setup" hidden>
+      <h2>위치 맞추기</h2>
+      <p id="hints" class="hint">카메라를 준비하는 중…</p>
+    </section>
+
+    <section data-screen="calibrate" hidden>
+      <h2>보정: 준비 자세(앙 가르드)로 가만히 서 있으세요</h2>
+      <p class="hint">진행 <span id="cal-progress">0</span></p>
+      <p id="cal-error" class="hint"></p>
+    </section>
+
+    <section data-screen="bout" hidden>
+      <div class="hud">
+        <span id="score">0 : 0</span>
+        <span id="clock">3:00</span>
+        <span id="distance" class="muted"></span>
+      </div>
+      <p id="message"></p>
+      <canvas id="arena"></canvas>
+    </section>
+
+    <section data-screen="result" hidden>
+      <h2 id="result-title"></h2>
+      <p id="result-score"></p>
+      <p id="result-detail" class="hint"></p>
+      <p><a href="versus.html">다시 하기</a> · <a href="practice.html">자세 연습</a></p>
+    </section>
+
+    <div class="preview"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+
+    <script type="module" src="/src/versus/main.ts"></script>
+  </body>
+</html>
