@@ -1,4 +1,5 @@
 import { validateSession, type PoseFrame } from '@fc/core';
+import { playTimeline } from '../shared/timeline';
 import type { PoseSource, PoseSourceFrame } from './pose-source';
 
 export interface ReplayOptions {
@@ -12,8 +13,7 @@ export class ReplayPoseSource implements PoseSource {
   readonly aspect: number;
   private readonly frames: readonly PoseFrame[];
   private readonly onEnd: (() => void) | undefined;
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  private stopped = false;
+  private stopFn: (() => void) | null = null;
 
   constructor(frames: readonly PoseFrame[], opts: ReplayOptions = {}) {
     this.frames = frames;
@@ -22,26 +22,12 @@ export class ReplayPoseSource implements PoseSource {
   }
 
   async start(onFrame: (frame: PoseSourceFrame) => void): Promise<void> {
-    this.stopped = false;
-    const play = (i: number) => {
-      if (this.stopped) return;
-      const frame = this.frames[i];
-      if (!frame) {
-        this.onEnd?.();
-        return;
-      }
-      onFrame({ tMs: frame.tMs, landmarks: frame.landmarks });
-      const next = this.frames[i + 1];
-      const wait = next ? Math.max(0, next.tMs - frame.tMs) : 0;
-      this.timer = setTimeout(() => play(i + 1), wait);
-    };
-    play(0);
+    this.stopFn = playTimeline(this.frames, (f) => onFrame({ tMs: f.tMs, landmarks: f.landmarks }), this.onEnd);
   }
 
   stop(): void {
-    this.stopped = true;
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = null;
+    this.stopFn?.();
+    this.stopFn = null;
   }
 }
 
