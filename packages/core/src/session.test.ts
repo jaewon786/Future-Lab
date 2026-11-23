@@ -60,6 +60,17 @@ describe('validateSession', () => {
       { imuSamples: [{ tMs: 0, rotation: { alpha: 0, beta: 0, gamma: 0 } }] },
       'imuSamples[0]',
     ],
+    [
+      'IMU 가속도 범위 초과',
+      { imuSamples: [{ tMs: 0, accel: { x: 1e300, y: 0, z: 0 }, rotation: { alpha: 0, beta: 0, gamma: 0 } }] },
+      'imuSamples[0]',
+    ],
+    [
+      'IMU 회전 범위 초과',
+      { imuSamples: [{ tMs: 0, accel: { x: 0, y: 0, z: 0 }, rotation: { alpha: 9000, beta: 0, gamma: 0 } }] },
+      'imuSamples[0]',
+    ],
+    ['recordedAt이 ISO 형식이 아님', { recordedAt: 'Nov 23 2026' }, 'recordedAt'],
     ['라벨 종류가 잘못됨', { labels: [{ tMs: 0, kind: 'parry' }] }, 'labels[0]'],
     ['시각이 음수', { labels: [{ tMs: -5, kind: 'clap' }] }, 'labels[0]'],
     [

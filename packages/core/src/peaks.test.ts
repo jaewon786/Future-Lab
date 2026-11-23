@@ -22,6 +22,16 @@ describe('findPeaks', () => {
     expect(findPeaks(t, v, { threshold: 5, minIntervalMs: 0 })).toEqual([{ index: 1, tMs: 10, value: 7 }]);
   });
 
+  it('평평한 구간 뒤에 값이 더 오르면 그 구간은 피크가 아니다', () => {
+    const v = [0, 5, 5, 9, 0, 0, 0, 0, 0];
+    expect(findPeaks(t, v, { threshold: 4, minIntervalMs: 0 })).toEqual([{ index: 3, tMs: 30, value: 9 }]);
+  });
+
+  it('끝까지 평평하면 떨어지는 지점이 없으므로 피크가 아니다', () => {
+    const v = [0, 0, 0, 0, 0, 0, 7, 7, 7];
+    expect(findPeaks(t, v, { threshold: 5, minIntervalMs: 0 })).toEqual([]);
+  });
+
   it('min 모드는 임계값 아래의 극소점을 찾는다', () => {
     const v = [5, 4, 0.5, 3, 5, 5, 5, 5, 5];
     expect(findPeaks(t, v, { threshold: 1, minIntervalMs: 0, mode: 'min' })).toEqual([

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { POSE_LANDMARK_COUNT, type ImuRecord, type Landmark, type PoseFrame } from './session';
-import { LEFT_WRIST, RIGHT_WRIST, detectClapsImu, detectClapsPose, pairClapOffsets } from './clap';
+import { DEFAULT_POSE_CLAP, LEFT_WRIST, RIGHT_WRIST, detectClapsImu, detectClapsPose, pairClapOffsets } from './clap';
 
 function poseWithWristGap(tMs: number, gap: number, wristVisibility = 0.9): PoseFrame {
   const landmarks: Landmark[] = Array.from({ length: POSE_LANDMARK_COUNT }, () => ({ x: 0.5, y: 0.5, visibility: 0.9 }));
@@ -14,6 +14,13 @@ describe('detectClapsPose', () => {
     const gaps = [0.4, 0.3, 0.1, 0.02, 0.1, 0.3, 0.4];
     const frames = gaps.map((g, i) => poseWithWristGap(i * 33, g));
     expect(detectClapsPose(frames)).toEqual([99]);
+  });
+
+  it('화면 비율을 반영해 거리를 잰다 (x는 너비, y는 높이 기준 정규화)', () => {
+    // x 차이 0.04는 4:3 화면에서 실제로 0.04 × 4/3 ≈ 0.053 (높이 단위)이라 0.05 기준을 넘는다
+    const frames = [0.4, 0.04, 0.4].map((g, i) => poseWithWristGap(i * 33, g));
+    expect(detectClapsPose(frames, { ...DEFAULT_POSE_CLAP, aspectRatio: 4 / 3 })).toEqual([]);
+    expect(detectClapsPose(frames, { ...DEFAULT_POSE_CLAP, aspectRatio: 1 })).toEqual([33]);
   });
 
   it('손목 신뢰도가 낮은 프레임은 건너뛴다', () => {
