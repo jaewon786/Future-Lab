@@ -1,0 +1,8 @@
+{
+  "name": "@fc/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "순수 판정 로직: 런지, 찌르기, 센서 융합, 상대 AI, 점수 (화면·센서 의존 없음)",
+  "exports": { ".": "./src/index.ts" }
+}
