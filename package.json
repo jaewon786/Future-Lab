@@ -19,7 +19,8 @@
     "eval:clap-sync": "tsx scripts/eval-clap-sync.ts",
     "eval:lunge": "tsx scripts/eval-lunge.ts",
     "make:fixture": "tsx scripts/make-synthetic-session.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "make:fixture:versus": "tsx scripts/make-versus-fixture.ts"
   },
   "engines": {
     "node": ">=22"
