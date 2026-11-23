@@ -29,9 +29,13 @@ test('보정 후 런지 3회에 각각 피드백 카드가 뜨고 오류 런지�
   await page.getByRole('button', { name: '시작' }).click();
 
   await expect(page.locator('body')).toHaveAttribute('data-screen', 'practice', { timeout: 10_000 });
+  // 화면 전환 후에도 관절 화면과 연습 패널이 실제로 보여야 한다 (body가 숨겨지던 버그 회귀 방지)
+  await expect(page.locator('#overlay')).toBeVisible();
+  await expect(page.locator('#practice-panel')).toBeVisible();
 
   const cards = page.locator('[data-testid="lunge-card"]');
   await expect(cards).toHaveCount(3, { timeout: 15_000 });
+  await expect(cards.first()).toBeVisible();
   // 새 카드가 위에 쌓인다: 맨 아래가 1회
   await expect(cards.nth(2)).toContainText('1회 — 좋은 런지');
   await expect(cards.nth(1)).toContainText('2회 — 고칠 점 1개');

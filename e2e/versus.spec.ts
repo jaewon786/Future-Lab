@@ -22,6 +22,8 @@ for (const mode of ['webcam', 'phone'] as const) {
   test(`${mode === 'webcam' ? '웹캠만' : '폰 + 웹캠'}: 보정 후 5번 찔러 5:0 승리`, async ({ page }) => {
     await startBout(page, mode);
     await expect(page.locator('body')).toHaveAttribute('data-screen', 'bout', { timeout: 10_000 });
+    await expect(page.locator('#arena')).toBeVisible();
+    await expect(page.locator('#score')).toBeVisible();
     await expect(page.locator('#score')).toHaveText('1 : 0', { timeout: 10_000 });
     await expect(page.locator('body')).toHaveAttribute('data-screen', 'result', { timeout: 20_000 });
     await expect(page.locator('#result-title')).toHaveText('승리');
