@@ -25,7 +25,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node scripts/prepare-mediapipe.mjs --fetch-model
+      - run: node scripts/prepare-mediapipe.mjs
       - run: npm run build -w @fc/laptop
         env:
           BASE_PATH: /${{ github.event.repository.name }}/laptop/

@@ -4,8 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node ../../scripts/prepare-mediapipe.mjs",
-    "prebuild": "node ../../scripts/prepare-mediapipe.mjs",
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview"

@@ -1,15 +1,18 @@
-import { DrawingUtils, FilesetResolver, PoseLandmarker, type PoseLandmarkerResult } from '@mediapipe/tasks-vision';
+import { DrawingUtils, PoseLandmarker, type PoseLandmarkerResult } from '@mediapipe/tasks-vision';
+import wasmLoaderPath from '@mediapipe/tasks-vision/vision_wasm_internal.js?url';
+import wasmBinaryPath from '@mediapipe/tasks-vision/vision_wasm_internal.wasm?url';
 import { POSE_LANDMARK_COUNT, type Landmark } from '@fc/core';
 
 export type Delegate = 'GPU' | 'CPU';
 
 /**
- * 포즈 추정기를 만든다. WASM과 모델은 같은 사이트에서 읽는다(scripts/prepare-mediapipe.mjs).
+ * 포즈 추정기를 만든다. WASM은 Vite가 빌드 결과에 함께 넣고, 모델은 같은 사이트의
+ * models/ 에서 읽는다(scripts/prepare-mediapipe.mjs). 외부 CDN을 쓰지 않는다.
  * GPU 위임이 실패하면 CPU로 다시 시도하고, 실제로 쓴 위임 방식을 돌려준다.
  */
 export async function createPose(delegate: Delegate): Promise<{ landmarker: PoseLandmarker; delegate: Delegate }> {
   const base = import.meta.env.BASE_URL;
-  const vision = await FilesetResolver.forVisionTasks(`${base}mediapipe/wasm`);
+  const vision = { wasmLoaderPath, wasmBinaryPath };
   const make = (d: Delegate) =>
     PoseLandmarker.createFromOptions(vision, {
       baseOptions: { modelAssetPath: `${base}models/pose_landmarker_lite.task`, delegate: d },
