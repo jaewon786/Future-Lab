@@ -1,4 +1,3 @@
-import { findPeaks, thinByInterval } from './peaks';
 import type { ImuRecord, LabelEvent } from './session';
 
 export interface ThrustParams {
@@ -34,26 +33,80 @@ function rotationMagnitude(s: ImuRecord): number {
   return Math.hypot(alpha, beta, gamma);
 }
 
+/** 프레임마다 IMU 샘플을 넣는 실시간 찌르기 감지기 */
+export interface ThrustDetector {
+  /** 샘플을 넣고, 확정된 찌르기를 돌려준다 (대부분 빈 배열) */
+  push(sample: ImuRecord): ThrustDetection[];
+  /** 남은 후보를 지금까지의 샘플로 확정한다 (기록 끝에서 호출) */
+  flush(): ThrustDetection[];
+}
+
+interface Candidate {
+  readonly tMs: number;
+  readonly value: number;
+}
+
 /**
- * 폰 IMU 샘플(시간순)에서 찌르기를 찾는다.
- * y축 가속도 피크 → 피크 전후 회전 속도 검사 → 디바운스 순서로 거른다.
+ * 실시간 찌르기 감지: y축 가속도 극대점 → 피크 전후 rotationWindowMs 회전 검사 → 디바운스.
+ * 회전 검사에 피크 뒤 샘플이 필요하므로 찌르기는 피크보다 rotationWindowMs 늦게 확정되지만,
+ * 돌려주는 tMs는 피크 시각이다. 디바운스 안에서는 먼저 온 찌르기가 남는다 (경기에서 바로 알리기 위해).
  */
+export function createThrustDetector(params: ThrustParams): ThrustDetector {
+  const buffer: ImuRecord[] = [];
+  const pending: Candidate[] = [];
+  let prev: number | null = null;
+  let candidate: Candidate | null = null;
+  let lastEmitMs = Number.NEGATIVE_INFINITY;
+  const keepMs = 2 * params.rotationWindowMs + 200;
+
+  const confirm = (p: Candidate): ThrustDetection | null => {
+    const swing = buffer.some(
+      (s) => Math.abs(s.tMs - p.tMs) <= params.rotationWindowMs && rotationMagnitude(s) > params.maxRotationDegPerSec,
+    );
+    if (swing || p.tMs - lastEmitMs < params.debounceMs) return null;
+    lastEmitMs = p.tMs;
+    return { tMs: p.tMs, peakAccel: p.value };
+  };
+
+  const release = (nowMs: number | null): ThrustDetection[] => {
+    const out: ThrustDetection[] = [];
+    while (pending.length > 0 && (nowMs === null || nowMs - (pending[0] as Candidate).tMs > params.rotationWindowMs)) {
+      const d = confirm(pending.shift() as Candidate);
+      if (d) out.push(d);
+    }
+    return out;
+  };
+
+  return {
+    push(sample) {
+      buffer.push(sample);
+      while (buffer.length > 0 && sample.tMs - (buffer[0] as ImuRecord).tMs > keepMs) buffer.shift();
+
+      const v = sample.accel.y * params.direction;
+      if (!Number.isFinite(v)) {
+        prev = null;
+        candidate = null;
+      } else {
+        // 오르면 후보, 같으면(평평한 꼭대기) 유지, 내려가면 후보를 피크로 확정
+        if (prev !== null && v > prev) candidate = { tMs: sample.tMs, value: v };
+        else if (prev !== null && v < prev && candidate) {
+          if (candidate.value >= params.accelThreshold) pending.push(candidate);
+          candidate = null;
+        }
+        prev = v;
+      }
+      return release(sample.tMs);
+    },
+    flush() {
+      return release(null);
+    },
+  };
+}
+
+/** 기록 전체(시간순)에서 찌르기를 찾는다. 실시간 감지기와 같은 결과를 낸다. */
 export function detectThrusts(samples: readonly ImuRecord[], params: ThrustParams): ThrustDetection[] {
-  const times = samples.map((s) => s.tMs);
-  const forward = samples.map((s) => s.accel.y * params.direction);
-  const peaks = findPeaks(times, forward, { threshold: params.accelThreshold, minIntervalMs: 0 });
-
-  const notSwing = peaks.filter((p) => {
-    for (let i = p.index; i >= 0 && p.tMs - (times[i] as number) <= params.rotationWindowMs; i--) {
-      if (rotationMagnitude(samples[i] as ImuRecord) > params.maxRotationDegPerSec) return false;
-    }
-    for (let i = p.index + 1; i < samples.length && (times[i] as number) - p.tMs <= params.rotationWindowMs; i++) {
-      if (rotationMagnitude(samples[i] as ImuRecord) > params.maxRotationDegPerSec) return false;
-    }
-    return true;
-  });
-
-  return thinByInterval(notSwing, params.debounceMs).map((p) => ({ tMs: p.tMs, peakAccel: p.value }));
+  const detector = createThrustDetector(params);
+  return [...samples.flatMap((s) => detector.push(s)), ...detector.flush()];
 }
 
 /** 보정 때 잰 찌르기 최대 가속도들의 중앙값 × ratio. 보정 값이 없으면 기본 임계값. */

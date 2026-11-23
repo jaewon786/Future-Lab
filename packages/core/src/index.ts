@@ -10,3 +10,8 @@ export * from './calibration';
 export * from './lunge';
 export * from './lunge-detector';
 export * from './lunge-eval';
+export * from './webcam-thrust';
+export * from './thrust-fusion';
+export * from './piste';
+export * from './opponent';
+export * from './bout';

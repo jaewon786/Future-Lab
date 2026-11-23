@@ -8,6 +8,7 @@ if (app) {
     <h1>펜싱 코치 · 노트북 (기술 검증)</h1>
     <ul>
       <li><a href="practice.html"><b>자세 연습</b></a></li>
+      <li><a href="versus.html"><b>대결</b></a></li>
       <li><a href="spikes/pose-fps.html">포즈 처리 속도 측정</a></li>
       <li><a href="spikes/link.html">폰 연결 지연 측정</a></li>
       <li><a href="spikes/recorder.html">세션 기록기</a></li>

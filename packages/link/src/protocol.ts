@@ -55,8 +55,11 @@ function isFiniteIn(v: unknown, maxAbs: number): v is number {
   return typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= maxAbs;
 }
 
+/** performance.now() 기준 시각 상한 (약 115일). 이보다 크면 잘못된 값으로 본다 */
+export const MAX_TIME_MS = 1e10;
+
 function isTimeMs(v: unknown): v is number {
-  return typeof v === 'number' && Number.isFinite(v) && v >= 0;
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= MAX_TIME_MS;
 }
 
 function isSeq(v: unknown): v is number {

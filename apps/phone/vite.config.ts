@@ -10,6 +10,7 @@ export default defineConfig({
     rolldownOptions: {
       input: {
         main: page('index.html'),
+        controller: page('controller.html'),
         sensor: page('spikes/sensor.html'),
       },
     },

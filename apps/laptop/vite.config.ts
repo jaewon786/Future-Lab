@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: page('index.html'),
         practice: page('practice.html'),
+        versus: page('versus.html'),
         link: page('spikes/link.html'),
         poseFps: page('spikes/pose-fps.html'),
         recorder: page('spikes/recorder.html'),
