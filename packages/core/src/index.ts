@@ -9,3 +9,4 @@ export * from './pose-quality';
 export * from './calibration';
 export * from './lunge';
 export * from './lunge-detector';
+export * from './lunge-eval';
