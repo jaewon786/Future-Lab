@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ImuRecord, LabelEvent } from './session';
-import { DEFAULT_THRUST_PARAMS, detectThrusts, evaluateThrusts, thresholdFromCalibration } from './thrust';
+import {
+  DEFAULT_THRUST_PARAMS,
+  createThrustDetector,
+  detectThrusts,
+  evaluateThrusts,
+  thresholdFromCalibration,
+} from './thrust';
 
 interface Pulse {
   readonly tMs: number;
@@ -124,5 +130,54 @@ describe('evaluateThrusts', () => {
     const r = evaluateThrusts([], [], 300);
     expect(r.recall).toBeNaN();
     expect(r.falsePositiveRate).toBeNaN();
+  });
+});
+
+describe('createThrustDetector (실시간)', () => {
+  const stream = (samples: ImuRecord[]) => {
+    const d = createThrustDetector(params);
+    const out = samples.flatMap((s) => d.push(s));
+    return { out, flushed: d.flush() };
+  };
+
+  it('회전 검사 구간(300ms)이 지나면 찌르기를 내보낸다', () => {
+    const { out, flushed } = stream(signal([{ tMs: 1000, peak: 20 }]));
+    expect(out).toHaveLength(1);
+    expect(flushed).toEqual([]);
+    expect(out[0]!.tMs).toBeGreaterThan(980);
+    expect(out[0]!.tMs).toBeLessThan(1020);
+  });
+
+  it('회전 검사 구간이 끝나기 전에는 내보내지 않고, flush로 마저 낸다', () => {
+    const samples = signal([{ tMs: 1000, peak: 20 }]).filter((s) => s.tMs <= 1150);
+    const { out, flushed } = stream(samples);
+    expect(out).toEqual([]);
+    expect(flushed).toHaveLength(1);
+  });
+
+  it('휘두르기(회전 큼)는 내보내지 않는다', () => {
+    expect(stream(signal([{ tMs: 1000, peak: 25, rotation: 400 }])).out).toEqual([]);
+  });
+
+  it('디바운스 안의 두 번째 찌르기는 버린다 (먼저 온 것 유지)', () => {
+    const { out } = stream(
+      signal([
+        { tMs: 1000, peak: 15 },
+        { tMs: 1300, peak: 20 },
+      ]),
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]!.tMs).toBeLessThan(1100);
+  });
+
+  it('detectThrusts와 같은 결과를 낸다', () => {
+    const samples = signal([
+      { tMs: 500, peak: 20 },
+      { tMs: 1500, peak: 18 },
+      { tMs: 2500, peak: 25, rotation: 400 },
+    ]);
+    const d = createThrustDetector(params);
+    const streamed = [...samples.flatMap((s) => d.push(s)), ...d.flush()];
+    expect(streamed).toEqual(detectThrusts(samples, params));
   });
 });
