@@ -3,6 +3,8 @@
 노트북 웹캠 + 폰 IMU로 펜싱 런지를 판정하고 3D 가상 상대와 대결하는 웹 앱 (수업 프로젝트).
 계획서(작업 ID T0-1 … T5-1, 게이트 G0 … G5): https://claude.ai/artifact/PZEk5KSf7LCFbqbMqHhJVZ
 
+새 세션은 먼저 `docs/HANDOFF.md`(현재 진행 상황·대기 중인 결정·작업 방식)를 읽는다.
+
 ## 규칙
 - 판정 로직은 `packages/core`에 순수 함수로 둔다. DOM·센서·Three.js에 의존하지 않는다.
 - core는 TDD: 테스트 먼저, `fixtures/` 기록 재생으로 검증. 커버리지 80% 미만이면 CI 실패.
