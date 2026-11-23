@@ -33,6 +33,14 @@ describe('validateSession', () => {
     if (r.ok) expect(r.session.labels).toHaveLength(3);
   });
 
+  it('런지 판정 라벨(lunge-good, lunge-bad)을 허용한다', () => {
+    const labels = [
+      { tMs: 10, kind: 'lunge-good' },
+      { tMs: 20, kind: 'lunge-bad' },
+    ];
+    expect(validateSession(makeSession({ labels })).ok).toBe(true);
+  });
+
   it('빈 배열도 허용한다 (짧은 테스트 기록)', () => {
     expect(validateSession(makeSession({ poseFrames: [], imuSamples: [], labels: [] })).ok).toBe(true);
   });

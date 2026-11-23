@@ -1,7 +1,7 @@
 // Task 7: 노트북 포즈 추정 속도 측정. G2 기준: 15fps 이상.
 import type { PoseLandmarker } from '@mediapipe/tasks-vision';
 import { el, fmt, showAndCopyJson } from './common';
-import { createPose, drawPose, openCamera, type Delegate } from './pose';
+import { createPose, drawPose, openCamera, type Delegate } from '../pose/mediapipe';
 
 const DURATION_MS = 30_000;
 const WARMUP_MS = 2_000;

@@ -61,3 +61,15 @@ export function drawPose(canvas: HTMLCanvasElement, video: HTMLVideoElement, res
     draw.drawLandmarks(lm, { color: '#ef4444', radius: 3 });
   }
 }
+
+/** 세션 기록 형식 관절을 캔버스에 그린다 (카메라·재생 공통). 캔버스 크기는 호출 쪽이 맞춘다. */
+export function drawLandmarks(canvas: HTMLCanvasElement, landmarks: readonly Landmark[] | null): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!landmarks) return;
+  const lm = landmarks.map((l) => ({ x: l.x, y: l.y, z: 0, visibility: l.visibility }));
+  const draw = new DrawingUtils(ctx);
+  draw.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, { color: '#3b82f6', lineWidth: 3 });
+  draw.drawLandmarks(lm, { color: '#ef4444', radius: 3 });
+}

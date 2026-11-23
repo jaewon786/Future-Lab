@@ -9,3 +9,7 @@ coverage/
 
 # MediaPipe 포즈 모델 (scripts/prepare-mediapipe.mjs가 내려받음)
 apps/laptop/public/models/
+
+# Playwright 결과물
+test-results/
+playwright-report/

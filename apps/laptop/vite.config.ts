@@ -10,6 +10,7 @@ export default defineConfig({
     rolldownOptions: {
       input: {
         main: page('index.html'),
+        practice: page('practice.html'),
         link: page('spikes/link.html'),
         poseFps: page('spikes/pose-fps.html'),
         recorder: page('spikes/recorder.html'),

@@ -27,7 +27,8 @@ export interface ImuRecord {
   readonly rotation: { readonly alpha: number; readonly beta: number; readonly gamma: number };
 }
 
-export const LABEL_KINDS = ['thrust', 'other', 'clap'] as const;
+/** thrust·other·clap: 찌르기 평가용, lunge-good·lunge-bad: 런지 자세 판정 평가용 */
+export const LABEL_KINDS = ['thrust', 'other', 'clap', 'lunge-good', 'lunge-bad'] as const;
 export type LabelKind = (typeof LABEL_KINDS)[number];
 
 export interface LabelEvent {

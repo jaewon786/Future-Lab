@@ -11,13 +11,19 @@ import {
 import { phoneToLaptopMs, type ImuSample } from '@fc/link';
 import { hostLink } from '@fc/link/peer';
 import { ClockSync, el, phoneSensorUrl, showJoinQr } from './common';
-import { createPose, drawPose, openCamera, toLandmarks } from './pose';
+import { createPose, drawPose, openCamera, toLandmarks } from '../pose/mediapipe';
 
 const MIN_SYNC_SAMPLES = 20;
 /** 60Hz 기준 약 55분. 상대 기기가 메시지를 쏟아내도 메모리가 넘치지 않게 막는다 */
 const MAX_IMU_SAMPLES = 200_000;
 /** 물리 키 위치로 판단한다 — 한글 입력 상태에서도 T/O/C 자리를 누르면 라벨이 남는다 */
-const KEYS: Record<string, LabelKind> = { KeyT: 'thrust', KeyO: 'other', KeyC: 'clap' };
+const KEYS: Record<string, LabelKind> = {
+  KeyT: 'thrust',
+  KeyO: 'other',
+  KeyC: 'clap',
+  KeyG: 'lunge-good',
+  KeyB: 'lunge-bad',
+};
 
 const video = el<HTMLVideoElement>('video');
 const canvas = el<HTMLCanvasElement>('overlay');
@@ -65,7 +71,8 @@ function render(): void {
   counts.textContent = [
     `폰: ${phoneLabel} · 시계 동기화 샘플 ${sync.samples.length}/${MIN_SYNC_SAMPLES}`,
     `${recording ? '● 기록 중' : '대기'} · 포즈 ${poseFrames.length} · IMU ${rawImu.length}${rawImu.length >= MAX_IMU_SAMPLES ? ' (상한 도달 — 멈추고 저장하세요)' : ''}`,
-    `찌르기(T) ${by('thrust')} · 일반 동작(O) ${by('other')} · 박수(C) ${by('clap')} · 마지막: ${lastLabel || '—'}`,
+    `찌르기(T) ${by('thrust')} · 일반 동작(O) ${by('other')} · 박수(C) ${by('clap')} · 좋은 런지(G) ${by('lunge-good')} · 나쁜 런지(B) ${by('lunge-bad')}`,
+    `마지막 라벨: ${lastLabel || '—'}`,
   ].join('\n');
   recordBtn.disabled = sync.samples.length < MIN_SYNC_SAMPLES && !recording;
 }
